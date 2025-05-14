@@ -103,6 +103,7 @@ const login = async (req, res) => {
 
     // Update last login
     await user.update({ lastLogin: new Date() });
+console.log("JWT Secret is:", process.env.SECRET_ACCESS_TOKEN);
 
     // Generate JWT
     const token = jwt.sign(

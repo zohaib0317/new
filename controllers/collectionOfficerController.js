@@ -1,87 +1,95 @@
-const { Case, Comment, User } = require('../models');
+const { Collection, Case, Comment } = require('../models');
 
-// 1. Get all assigned and verified cases
 const getAssignedCases = async (req, res) => {
-  try {
-    const officerId = req.user.id;
+  const officerId = req.userId;
 
-    const cases = await Case.findAll({
-      where: {
-        assignedTo: officerId,
-        status: 'Verified'
-      },
-      include: [
-        { model: Comment },
-        { model: User, as: 'assignedUser', attributes: ['id', 'name', 'role'] }
-      ]
+  const assigned = await Collection.findAll({
+    where: { officerId },
+    include: [{ model: Case }]
+  });
+
+  const filtered = assigned.map(item => {
+    const caseData = item.Case;
+    const visible = {};
+    item.sharedFields.forEach(field => {
+      visible[field] = caseData[field];
     });
+    return {
+      caseId: item.caseId,
+      status: item.status,
+      fields: visible
+    };
+  });
 
-    res.status(200).json({ success: true, data: cases });
-  } catch (error) {
-    console.error('Error fetching cases:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
+  return res.json({ success: true, data: filtered });
 };
 
-// 2. Add a comment
+const getCaseById = async (req, res) => {
+  const officerId = req.userId;
+  const caseId = req.params.id;
+
+  const assignment = await Collection.findOne({
+    where: { officerId, caseId },
+    include: [{ model: Case }]
+  });
+
+  if (!assignment) return res.status(404).json({ message: 'Case not found' });
+
+  const caseData = assignment.Case;
+  const visible = {};
+  assignment.sharedFields.forEach(field => {
+    visible[field] = caseData[field];
+  });
+
+  return res.json({ success: true, data: visible });
+};
+
 const addComment = async (req, res) => {
-  try {
-    const { caseId, text } = req.body;
-    const userId = req.user.id;
-
-    const comment = await Comment.create({ caseId, userId, text });
-
-    res.status(201).json({ success: true, message: 'Comment added', data: comment });
-  } catch (error) {
-    console.error('Error adding comment:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
+  const { caseId, text } = req.body;
+  const comment = await Comment.create({
+    caseId,
+    userId: req.userId,
+    text
+  });
+  res.status(201).json({ success: true, message: 'Comment added', data: comment });
 };
 
-// 3. Update case status (Collected or Sent to Legal)
 const updateCaseStatus = async (req, res) => {
-  try {
-    const { caseId, newStatus } = req.body;
+  const { caseId, newStatus, rejectionReason } = req.body;
+  const officerId = req.userId;
 
-    if (!['Collected', 'Legal'].includes(newStatus)) {
-      return res.status(400).json({ success: false, message: 'Invalid status for collection phase' });
-    }
+  const assignment = await Collection.findOne({ where: { officerId, caseId } });
+  if (!assignment) return res.status(404).json({ message: 'Assignment not found' });
 
-    const caseRecord = await Case.findByPk(caseId);
+  assignment.status = newStatus;
+  if (newStatus === 'Rejected') assignment.rejectionReason = rejectionReason;
 
-    if (!caseRecord || caseRecord.assignedTo !== req.user.id) {
-      return res.status(404).json({ success: false, message: 'Case not found or unauthorized' });
-    }
+  await assignment.save();
 
-    caseRecord.status = newStatus;
-    await caseRecord.save();
-
-    res.status(200).json({ success: true, message: 'Case status updated', data: caseRecord });
-  } catch (error) {
-    console.error('Error updating status:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
+  return res.json({ success: true, message: 'Status updated' });
 };
 
-// 4. Return case to Super Admin
 const returnCaseToAdmin = async (req, res) => {
-  try {
-    const { caseId } = req.body;
+  const { caseId } = req.body;
+  const officerId = req.userId;
 
-    const caseRecord = await Case.findByPk(caseId);
+  const assignment = await Collection.findOne({ where: { officerId, caseId } });
+  if (!assignment) return res.status(404).json({ message: 'Assignment not found' });
 
-    if (!caseRecord || caseRecord.assignedTo !== req.user.id) {
-      return res.status(404).json({ success: false, message: 'Case not found or unauthorized' });
-    }
+  await assignment.destroy();
 
-    caseRecord.assignedTo = null;
-    caseRecord.status = 'Returned to Admin';
-    await caseRecord.save();
+  const caseItem = await Case.findByPk(caseId);
+  caseItem.assignedTo = null;
+  caseItem.assignedRole = null;
+  await caseItem.save();
 
-    res.status(200).json({ success: true, message: 'Case returned to admin', data: caseRecord });
-  } catch (error) {
-    console.error('Error returning case:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
+  return res.json({ success: true, message: 'Case returned to admin' });
 };
-module.exports={getAssignedCases,addComment,updateCaseStatus,returnCaseToAdmin}
+
+module.exports = {
+  getAssignedCases,
+  getCaseById,
+  addComment,
+  updateCaseStatus,
+  returnCaseToAdmin
+};

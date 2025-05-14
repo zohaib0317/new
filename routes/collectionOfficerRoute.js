@@ -1,12 +1,13 @@
-const express = require('express')
-const router = express.Router()
-const{
-getAssignedCases,
-addComment,
-updateCaseStatus,
-returnCaseToAdmin
-}=require('../controllers/collectionOfficerController')
-const authMiddleware = require('../middleware/authMiddleware')
+const express = require('express');
+const router = express.Router();
+const {
+  getAssignedCases,
+  getCaseById,
+  addComment,
+  updateCaseStatus,
+  returnCaseToAdmin
+} = require('../controllers/collectionOfficerController');
+const authMiddleware = require('../middleware/authMiddleware');
 
 /**
  * @swagger
@@ -17,21 +18,44 @@ const authMiddleware = require('../middleware/authMiddleware')
 
 /**
  * @swagger
- * /api/v1/collection/cases:
+ * /api/v1/collection:
  *   get:
- *     summary: Get all verified cases assigned to the Collection Officer
+ *     summary: Get all assigned cases for the logged-in collection officer
  *     tags: [Collection]
  *     security:
  *       - BearerAuth: []
  *     responses:
  *       200:
- *         description: List of assigned verified cases
+ *         description: List of assigned cases
  */
-router.get('/collection', authMiddleware, getAssignedCases);
+router.get('/', authMiddleware(['CollectionOfficer']), getAssignedCases);
 
 /**
  * @swagger
- * /api/v1/collection/case/comment:
+ * /api/v1/collection/{id}:
+ *   get:
+ *     summary: Get a single assigned case by ID
+ *     tags: [Collection]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Case ID
+ *     responses:
+ *       200:
+ *         description: Case data
+ *       404:
+ *         description: Case not found
+ */
+router.get('/:id', authMiddleware(['CollectionOfficer']), getCaseById);
+
+/**
+ * @swagger
+ * /api/v1/collection/comment:
  *   post:
  *     summary: Add a comment to a case
  *     tags: [Collection]
@@ -49,21 +73,19 @@ router.get('/collection', authMiddleware, getAssignedCases);
  *             properties:
  *               caseId:
  *                 type: string
- *                 example: cb6d5ea6-3e4f-4a98-a637-8d2aa2c73d54
  *               text:
  *                 type: string
- *                 example: Called the patient but couldn’t collect
  *     responses:
  *       201:
  *         description: Comment added
  */
-router.post('/collection/comment', authMiddleware, addComment);
+router.post('/comment', authMiddleware(['CollectionOfficer']), addComment);
 
 /**
  * @swagger
- * /api/v1/collection/case/status:
+ * /api/v1/collection/status:
  *   put:
- *     summary: Update the status of a case (Collected or Sent to Legal)
+ *     summary: Update the status of a case
  *     tags: [Collection]
  *     security:
  *       - BearerAuth: []
@@ -81,19 +103,18 @@ router.post('/collection/comment', authMiddleware, addComment);
  *                 type: string
  *               newStatus:
  *                 type: string
- *                 enum: [Collected, Legal]
  *                 example: Collected
  *     responses:
  *       200:
  *         description: Case status updated
  */
-router.put('/collection/status', authMiddleware, updateCaseStatus);
+router.put('/status', authMiddleware(['CollectionOfficer']), updateCaseStatus);
 
 /**
  * @swagger
- * /api/v1/collection/case/return:
+ * /api/v1/collection/return:
  *   put:
- *     summary: Return case to Super Admin if unable to collect
+ *     summary: Return case to Super Admin
  *     tags: [Collection]
  *     security:
  *       - BearerAuth: []
@@ -108,11 +129,10 @@ router.put('/collection/status', authMiddleware, updateCaseStatus);
  *             properties:
  *               caseId:
  *                 type: string
- *                 example: cb6d5ea6-3e4f-4a98-a637-8d2aa2c73d54
  *     responses:
  *       200:
- *         description: Case returned to Admin
+ *         description: Case returned to Super Admin
  */
-router.put('/collection/return', authMiddleware, returnCaseToAdmin);
+router.put('/return', authMiddleware(['CollectionOfficer']), returnCaseToAdmin);
 
 module.exports = router;

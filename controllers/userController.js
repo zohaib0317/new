@@ -6,6 +6,8 @@ const { ALL_ROLES } = require('../utils/roles');
 // Create a new user
 const createUser = async (req, res) => {
   try {
+    console.log("📥 req.body:", req.body);
+    console.log("🔎 Allowed roles:", ALL_ROLES);
     let { name, email="", password, role } = req.body;
     email = email.toLowerCase();
     // Validate required fields

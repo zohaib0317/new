@@ -1,8 +1,10 @@
 const jwt = require('jsonwebtoken');
 
 const authMiddleware =
-  (roles = []) =>
-  async (req, res, next) => {
+  (roles = []) =>{
+    console.log("auth1234")
+ return async (req, res, next) => {
+    console.log("authhhh")
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
     if (!token) {
@@ -27,4 +29,7 @@ const authMiddleware =
     }
   };
 
+
+
+  }
 module.exports = authMiddleware;

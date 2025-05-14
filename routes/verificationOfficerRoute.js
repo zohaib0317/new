@@ -1,26 +1,27 @@
-const express = require('express')
-const router = express.Router()
+const express = require('express');
+const router = express.Router();
 const {
-  
-    getAssignedCases,
-    addComment,
-    updateCaseStatus,
-    returnCaseToAdmin
-} = require('../controllers/verificationOfficerController')
-const authMiddleware =require('../middleware/authMiddleware')
+  getAssignedCases,
+  getCaseById,
+  addComment,
+  updateCaseStatus,
+  returnCaseToAdmin
+} = require('../controllers/verificationOfficerController');
+
+const authMiddleware = require('../middleware/authMiddleware');
 
 /**
  * @swagger
  * tags:
  *   name: Verification
- *   description: Verification Officer APIs
+ *   description: APIs for Verification Officer
  */
 
 /**
  * @swagger
  * /api/v1/verification/cases:
  *   get:
- *     summary: Get all assigned cases for the logged-in verification officer
+ *     summary: Get all cases assigned to the logged-in verification officer
  *     tags: [Verification]
  *     security:
  *       - BearerAuth: []
@@ -28,7 +29,30 @@ const authMiddleware =require('../middleware/authMiddleware')
  *       200:
  *         description: List of assigned cases
  */
-router.get('/verification', authMiddleware, getAssignedCases);
+router.get('/cases', authMiddleware(['VerificationOfficer']), getAssignedCases);
+
+/**
+ * @swagger
+ * /api/v1/verification/cases/{id}:
+ *   get:
+ *     summary: Get a specific assigned case by ID
+ *     tags: [Verification]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Case ID
+ *     responses:
+ *       200:
+ *         description: Case data
+ *       404:
+ *         description: Case not found
+ */
+router.get('/cases/:id', authMiddleware(['VerificationOfficer']), getCaseById);
 
 /**
  * @swagger
@@ -46,20 +70,19 @@ router.get('/verification', authMiddleware, getAssignedCases);
  *             type: object
  *             required:
  *               - caseId
- *               - text
+ *               - comment
  *             properties:
  *               caseId:
  *                 type: string
- *                 example: c4e92aa4-d8a2-4b4b-bc69-e20d9eb37cb2
- *               text:
+ *               comment:
  *                 type: string
- *                 example: Please verify insurance details.
  *     responses:
- *       201:
+ *       200:
  *         description: Comment added
+ *       404:
+ *         description: Case not found
  */
-router.post('/verification/comment', authMiddleware, addComment);
-
+router.post('/case/comment', authMiddleware(['VerificationOfficer']), addComment);
 
 /**
  * @swagger
@@ -87,8 +110,10 @@ router.post('/verification/comment', authMiddleware, addComment);
  *     responses:
  *       200:
  *         description: Case status updated
+ *       404:
+ *         description: Case not found
  */
-router.put('/verification/status', authMiddleware, updateCaseStatus);
+router.put('/case/status', authMiddleware(['VerificationOfficer']), updateCaseStatus);
 
 /**
  * @swagger
@@ -112,10 +137,9 @@ router.put('/verification/status', authMiddleware, updateCaseStatus);
  *     responses:
  *       200:
  *         description: Case returned to Super Admin
+ *       404:
+ *         description: Case not found
  */
-router.put('/verification/return', authMiddleware, returnCaseToAdmin);
+router.put('/case/return', authMiddleware(['VerificationOfficer']), returnCaseToAdmin);
 
 module.exports = router;
-
-
-

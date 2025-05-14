@@ -1,21 +1,22 @@
 const express = require('express');
 const router = express.Router();
-const { createCase } = require('../controllers/createCaseController');
+const { createCase,assignCase,updateAssignedCase } = require('../controllers/createCaseController');
 const authMiddleware = require('../middleware/authMiddleware');
-
+const { SUPER_ADMIN } = require('../utils/roles');
+console.log("hello world3")
 /**
  * @swagger
  * tags:
- *   name: Cases
- *   description: Case management for Super Admin
+ *   name: Case
+ *   description: Case creation and assignment APIs for Super Admin
  */
 
 /**
  * @swagger
- * /api/v1/cases:
+ * /api/v1/case:
  *   post:
- *     summary: Create a new case (Super Admin only)
- *     tags: [Cases]
+ *     summary: Create a new case (without assigning)
+ *     tags: [Case]
  *     security:
  *       - BearerAuth: []
  *     requestBody:
@@ -27,33 +28,128 @@ const authMiddleware = require('../middleware/authMiddleware');
  *             required:
  *               - title
  *               - patientName
- *               - dateOfIncident
- *               - assignedTo
+ *               - claimNumber
+ *               - amount
  *             properties:
  *               title:
  *                 type: string
+ *                 example: "Slip and Fall"
  *               description:
  *                 type: string
+ *                 example: "Injury at supermarket"
  *               patientName:
  *                 type: string
- *               dateOfIncident:
+ *                 example: "John Doe"
+ *               doi:
  *                 type: string
- *               classOfBusiness:
+ *                 format: date
+ *                 example: "2024-03-10"
+ *               cob:
  *                 type: string
- *               adjusterNumber:
+ *                 example: "Personal Injury"
+ *               adjNumber:
  *                 type: string
+ *                 example: "ADJ123"
  *               claimNumber:
  *                 type: string
+ *                 example: "CLM456"
  *               insuranceName:
  *                 type: string
+ *                 example: "XYZ Insurance"
  *               amount:
  *                 type: number
- *               assignedTo:
- *                 type: string
+ *                 example: 8000.00
  *     responses:
  *       201:
  *         description: Case created successfully
+ *       400:
+ *         description: Missing or invalid input
+ *       500:
+ *         description: Internal server error
  */
-router.post('/cases', authMiddleware, createCase);
+router.post('/', authMiddleware([SUPER_ADMIN]), createCase);
+
+/**
+ * @swagger
+ * /api/v1/case/assign:
+ *   post:
+ *     summary: Assign an existing case to an officer
+ *     tags: [Case]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - caseId
+ *               - officerId
+ *               - role
+ *               - sharedFields
+ *             properties:
+ *               caseId:
+ *                 type: string
+ *                 example: "case-uuid-123"
+ *               officerId:
+ *                 type: string
+ *                 example: "officer-uuid-456"
+ *               role:
+ *                 type: string
+ *                 example: "Verification Officer"
+ *               sharedFields:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 example: ["patientName", "doi", "claimNumber"]
+ *     responses:
+ *       200:
+ *         description: Case assigned successfully
+ *       400:
+ *         description: Bad request
+ *       404:
+ *         description: Case or officer not found
+ *       500:
+ *         description: Internal server error
+ */
+router.post('/assign', authMiddleware([SUPER_ADMIN]), assignCase);
+
+/**
+ * @swagger
+ * /api/v1/case/{caseId}/reassign:
+ *   put:
+ *     summary: Reassign an existing case to a different officer
+ *     tags: [Case]
+ *     parameters:
+ *       - name: caseId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - officerId
+ *               - role
+ *             properties:
+ *               officerId:
+ *                 type: string
+ *               role:
+ *                 type: string
+ *               sharedFields:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       200:
+ *         description: Case reassigned successfully
+ */
+router.put('/:caseId/reassign', authMiddleware(['SuperAdmin']), updateAssignedCase);
+
 
 module.exports = router;

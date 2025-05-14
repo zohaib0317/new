@@ -50,6 +50,22 @@ module.exports = (sequelize) => {
     amount: {
       type: DataTypes.DECIMAL(10, 2),
     },
+    assignedTo: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      comment: 'User ID of the officer to whom this case is assigned'
+    },
+
+    assignedRole: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      comment: 'Role of the officer (e.g., Verification Officer)'
+    },
+    sharedFields: {
+  type: DataTypes.ARRAY(DataTypes.STRING),
+  allowNull: true
+}
+
   });
 
   return Case;
