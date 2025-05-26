@@ -139,8 +139,92 @@ const updateAssignedCase = async (req, res) => {
   }
 };
 
+
+// Get All Cases 
+const getAllCases = async (req, res) => {
+  try {
+    const cases = await Case.findAll({
+      order: [['createdAt', 'DESC']]
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'All cases fetched successfully',
+      data: cases
+    });
+
+  } catch (error) {
+    console.error('Error fetching all cases:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
+//  Get Case By ID 
+const getCaseById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const foundCase = await Case.findByPk(id);
+    if (!foundCase) {
+      return res.status(404).json({
+        success: false,
+        message: 'Case not found'
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Case fetched successfully',
+      data: foundCase
+    });
+
+  } catch (error) {
+    console.error('Error fetching case by ID:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
+//  Delete Case
+const deleteCase = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const foundCase = await Case.findByPk(id);
+    if (!foundCase) {
+      return res.status(404).json({
+        success: false,
+        message: 'Case not found'
+      });
+    }
+
+    await foundCase.destroy();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Case deleted successfully'
+    });
+
+  } catch (error) {
+    console.error('Error deleting case:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
+
 module.exports = {
   createCase,
   assignCase,
-  updateAssignedCase
+  updateAssignedCase,
+  getAllCases,
+  getCaseById,
+  deleteCase
 };

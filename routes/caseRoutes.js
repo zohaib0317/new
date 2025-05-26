@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createCase,assignCase,updateAssignedCase } = require('../controllers/createCaseController');
+const { createCase,assignCase,updateAssignedCase,getAllCases,getCaseById,deleteCase } = require('../controllers/createCaseController');
 const authMiddleware = require('../middleware/authMiddleware');
 const { SUPER_ADMIN } = require('../utils/roles');
 console.log("hello world3")
@@ -150,6 +150,76 @@ router.post('/assign', authMiddleware([SUPER_ADMIN]), assignCase);
  *         description: Case reassigned successfully
  */
 router.put('/:caseId/reassign', authMiddleware(['SuperAdmin']), updateAssignedCase);
+
+
+
+/**
+ * @swagger
+ * /api/v1/case/all:
+ *   get:
+ *     summary: Get all cases
+ *     tags: [Case]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: All cases fetched successfully
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/all', authMiddleware([SUPER_ADMIN]), getAllCases);
+
+
+/**
+ * @swagger
+ * /api/v1/case/{id}:
+ *   get:
+ *     summary: Get a case by ID
+ *     tags: [Case]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: ID of the case
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Case fetched successfully
+ *       404:
+ *         description: Case not found
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/:id', authMiddleware([SUPER_ADMIN]), getCaseById);
+
+
+/**
+ * @swagger
+ * /api/v1/case/{id}:
+ *   delete:
+ *     summary: Delete a case by ID
+ *     tags: [Case]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: ID of the case to delete
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Case deleted successfully
+ *       404:
+ *         description: Case not found
+ *       500:
+ *         description: Internal server error
+ */
+router.delete('/:id', authMiddleware([SUPER_ADMIN]), deleteCase);
 
 
 module.exports = router;
