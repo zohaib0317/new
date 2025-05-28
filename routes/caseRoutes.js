@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createCase,assignCase,updateAssignedCase,getAllCases,getCaseById,deleteCase } = require('../controllers/createCaseController');
+const { createCase,assignCase,updateAssignedCase,getAllCases,getCaseById,deleteCase,updateCase } = require('../controllers/createCaseController');
 const authMiddleware = require('../middleware/authMiddleware');
 const { SUPER_ADMIN } = require('../utils/roles');
 console.log("hello world3")
@@ -220,6 +220,57 @@ router.get('/:id', authMiddleware([SUPER_ADMIN]), getCaseById);
  *         description: Internal server error
  */
 router.delete('/:id', authMiddleware([SUPER_ADMIN]), deleteCase);
+
+
+/**
+ * @swagger
+ * /api/v1/case/{caseId}/edit:
+ *   put:
+ *     summary: Update an existing case (edit details)
+ *     tags: [Case]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - name: caseId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               patientName:
+ *                 type: string
+ *               doi:
+ *                 type: string
+ *               cob:
+ *                 type: string
+ *               adjNumber:
+ *                 type: string
+ *               claimNumber:
+ *                 type: string
+ *               insuranceName:
+ *                 type: string
+ *               amount:
+ *                 type: number
+ *     responses:
+ *       200:
+ *         description: Case updated successfully
+ *       404:
+ *         description: Case not found
+ *       500:
+ *         description: Internal server error
+ */
+router.put('/:caseId/edit', authMiddleware([SUPER_ADMIN]), updateCase);
+
 
 
 module.exports = router;

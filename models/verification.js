@@ -1,42 +1,38 @@
-const { DataTypes } = require('sequelize');
-
-module.exports = (sequelize) => {
-  const VerificationCase = sequelize.define('VerificationCase', {
+module.exports = (sequelize, DataTypes) => {
+  const verification = sequelize.define('verification', {
     id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
-    verificationOfficerId: {
+    officerId: {
       type: DataTypes.UUID,
       allowNull: false,
-      references:{
-        model:"Users",
-        key:"id"
+      references: {
+        model: "Users",
+        key: "id"
       }
     },
     caseId: {
-        type: DataTypes.UUID,
-        allowNull: false,
-        references:{
-          model:"Cases",
-          key:"id"
-        }
-      },
-    displayFeild: {
-        type: DataTypes.ARRAY(DataTypes.STRING),
-        allowNull: false
-      },
-      status: {
-        type: DataTypes.ENUM("Pending", "Verified", "Needs Review"),
-        defaultValue: "Pending"
-      },
-      message: {
-        type: DataTypes.STRING,
-        
-      },
-    
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: {
+        model: "Cases",
+        key: "id"
+      }
+    },
+    sharedFields: {
+      type: DataTypes.ARRAY(DataTypes.STRING),
+      allowNull: false
+    },
+    status: {
+      type: DataTypes.ENUM("Pending", "Verified", "Needs Review"),
+      defaultValue: "Pending"
+    },
+    message: {
+      type: DataTypes.STRING
+    }
   });
 
-  return VerificationCase;
+  return verification;
 };

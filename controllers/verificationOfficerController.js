@@ -1,10 +1,10 @@
-const { Verification, Case, Comment } = require('../models');
+const { verification, Case, Comment } = require('../models');
 
 // GET all assigned cases
 const getAssignedCases = async (req, res) => {
   const officerId = req.userId;
 
-  const assigned = await Verification.findAll({
+  const assigned = await verification.findAll({
     where: { officerId },
     include: [{ model: Case }]
   });
@@ -30,7 +30,7 @@ const getCaseById = async (req, res) => {
   const officerId = req.userId;
   const caseId = req.params.id;
 
-  const assignment = await Verification.findOne({
+  const assignment = await verification.findOne({
     where: { officerId, caseId },
     include: [{ model: Case }]
   });
@@ -45,40 +45,54 @@ const getCaseById = async (req, res) => {
 
   return res.json({ success: true, data: visible });
 };
-
-// Add comment
+//add comment
 const addComment = async (req, res) => {
-  const { caseId, text } = req.body;
+  const { caseId, content } = req.body;
+
+  if (!caseId || !content) {
+    return res.status(400).json({ success: false, message: 'caseId and content are required' });
+  }
+
   const comment = await Comment.create({
     caseId,
     userId: req.userId,
-    text
+    content
   });
+
   res.status(201).json({ success: true, message: 'Comment added', data: comment });
 };
+
 
 // Update case status
 const updateCaseStatus = async (req, res) => {
   const { caseId, newStatus, rejectionReason } = req.body;
   const officerId = req.userId;
 
-  const assignment = await Verification.findOne({ where: { officerId, caseId } });
+  const assignment = await verification.findOne({ where: { officerId, caseId } });
   if (!assignment) return res.status(404).json({ message: 'Assignment not found' });
 
+  // Officer assignment status update
   assignment.status = newStatus;
   if (newStatus === 'Rejected') assignment.rejectionReason = rejectionReason;
-
   await assignment.save();
+
+  // Update Case table status also
+  const caseItem = await Case.findByPk(caseId);
+  if (caseItem) {
+    caseItem.status = newStatus;
+    await caseItem.save();
+  }
 
   return res.json({ success: true, message: 'Status updated' });
 };
+
 
 // Return case to Super Admin
 const returnCaseToAdmin = async (req, res) => {
   const { caseId } = req.body;
   const officerId = req.userId;
 
-  const assignment = await Verification.findOne({ where: { officerId, caseId } });
+  const assignment = await verification.findOne({ where: { officerId, caseId } });
   if (!assignment) return res.status(404).json({ message: 'Assignment not found' });
 
   await assignment.destroy();

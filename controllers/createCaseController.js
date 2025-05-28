@@ -1,4 +1,4 @@
-const { Case,User } = require('../models');
+const { Case,User,verification } = require('../models');
 
 const createCase = async (req, res) => {
   try {
@@ -88,6 +88,23 @@ const assignCase = async (req, res) => {
     caseItem.status = 'Assigned';
 
     await caseItem.save();
+
+    // INSERT INTO verification table if role is VerificationOfficer
+if (role === 'VerificationOfficer') {
+  // Check for existing assignment to avoid duplicates
+  const existing = await verification.findOne({
+    where: { caseId, officerId }
+  });
+
+  if (!existing) {
+    await verification.create({
+      caseId,
+      officerId,
+      sharedFields,
+      status: 'Pending' // initial status for new assignments
+    });
+  }
+}
 
     return res.status(200).json({
       success: true,
@@ -220,11 +237,58 @@ const deleteCase = async (req, res) => {
 };
 
 
+const updateCase = async (req, res) => {
+  try {
+    const { caseId } = req.params;
+    const {
+      title,
+      description,
+      patientName,
+      doi,
+      cob,
+      adjNumber,
+      claimNumber,
+      insuranceName,
+      amount
+    } = req.body;
+
+    const caseItem = await Case.findByPk(caseId);
+    if (!caseItem) {
+      return res.status(404).json({ success: false, message: 'Case not found' });
+    }
+
+    // Update fields
+    caseItem.title = title ?? caseItem.title;
+    caseItem.description = description ?? caseItem.description;
+    caseItem.patientName = patientName ?? caseItem.patientName;
+    caseItem.doi = doi ?? caseItem.doi;
+    caseItem.cob = cob ?? caseItem.cob;
+    caseItem.adjNumber = adjNumber ?? caseItem.adjNumber;
+    caseItem.claimNumber = claimNumber ?? caseItem.claimNumber;
+    caseItem.insuranceName = insuranceName ?? caseItem.insuranceName;
+    caseItem.amount = amount ?? caseItem.amount;
+
+    await caseItem.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Case updated successfully',
+      data: caseItem
+    });
+
+  } catch (error) {
+    console.error('Error updating case:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+
 module.exports = {
   createCase,
   assignCase,
   updateAssignedCase,
   getAllCases,
   getCaseById,
-  deleteCase
+  deleteCase,
+  updateCase
 };
